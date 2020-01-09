@@ -58,7 +58,8 @@
     "ordered-imports": false,
     "quotemark": [
       true,
-      "single"
+      "single",
+      "double"
     ],
     "trailing-comma": false,
     "no-output-on-prefix": true,
@@ -83,6 +84,10 @@
       "app",
       "page",
       "kebab-case"
+    ],
+    "variable-name": [
+      true,
+      "allow-leading-underscore"
     ]
   }
 }
