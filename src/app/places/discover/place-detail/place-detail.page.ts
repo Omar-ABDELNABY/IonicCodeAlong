@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { NavController, ModalController, ActionSheetController, LoadingController } from '@ionic/angular';
+import { NavController, ModalController, ActionSheetController, LoadingController, AlertController } from '@ionic/angular';
 import { CreateBookingComponent } from '../../../bookings/create-booking/create-booking.component';
 import { Place } from '../../place.model';
 import { PlacesService } from '../../places.service';
@@ -19,6 +19,7 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
 
   isBookable = false;
   place: Place;
+  isLoading = false;
 
   constructor(
     private router: Router,
@@ -29,7 +30,8 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
     private placeService: PlacesService,
     private bookingService: BookingService,
     private loadingController: LoadingController,
-    private authService: AuthService) { }
+    private authService: AuthService,
+    private alertController: AlertController) { }
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe(paramMap => {
@@ -37,9 +39,21 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
         this.navController.navigateBack('/places/tabs/discover');
         return;
       }
+      this.isLoading = true;
       this.placesSubscription = this.placeService.getPlace(paramMap.get('placeId')).subscribe(place => {
         this.place = place;
         this.isBookable = this.place.userId !== this.authService.userId;
+        this.isLoading = false;
+      }, error => {
+        this.alertController.create({
+          header: 'An error occured!',
+          message: 'Place could not be fetched, please try again later!',
+          buttons: [{text: 'Okay', handler: () => {
+            this.router.navigate(['places/tabs/discover']);
+          }}]
+        }).then((alertElement) => {
+          alertElement.present();
+        });
       });
     });
   }

@@ -1,3 +1,4 @@
 export const environment = {
-  production: true
+  production: true,
+  backendurl: 'https://ionic-angular-course-omar.firebaseio.com/'
 };

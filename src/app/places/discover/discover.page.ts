@@ -13,6 +13,7 @@ import { AuthService } from 'src/app/auth/auth.service';
 export class DiscoverPage implements OnInit, OnDestroy {
 
   private placesSubscription: Subscription;
+  public isLoading = false;
 
   loadedPlaces: Place[];
   relevantPlaces: Place[];
@@ -25,6 +26,14 @@ export class DiscoverPage implements OnInit, OnDestroy {
       this.relevantPlaces = this.loadedPlaces;
     });
   }
+
+  ionViewWillEnter() {
+    this.isLoading = true;
+    this.placesService.fetchPlaces().subscribe(() => {
+      this.isLoading = false;
+    });
+  }
+
   ngOnDestroy(): void {
     if (this.placesSubscription) {
       this.placesSubscription.unsubscribe();

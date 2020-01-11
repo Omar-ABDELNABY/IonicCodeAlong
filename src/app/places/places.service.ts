@@ -1,16 +1,17 @@
 import { Injectable } from '@angular/core';
-import { Place } from './place.model';
+import { Place, PlaceData } from './place.model';
 import { AuthService } from '../auth/auth.service';
-import { BehaviorSubject } from 'rxjs';
-import { take, map, tap, delay, filter } from 'rxjs/operators';
-
+import { BehaviorSubject, of } from 'rxjs';
+import { take, map, tap, delay, filter, switchMap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlacesService {
 
-  private _places = new BehaviorSubject<Place[]>([
+  private oldPlaces = [
     new Place(
       'p1',
       'Manhattan Mansion',
@@ -41,15 +42,63 @@ export class PlacesService {
       new Date('2019-12-31'),
       'abc',
     ),
-  ]);
+  ];
 
-  constructor(private authService: AuthService) { }
+  private backendurl = environment.backendurl;
+  private urlPart = 'offered-places.json';
+  private url = `${this.backendurl}${this.urlPart}`
+  private _places = new BehaviorSubject<Place[]>([]);
+
+  constructor(private authService: AuthService, private httpClient: HttpClient) { }
+
+  fetchPlaces() {
+    return this.httpClient
+    .get<{[key: string]: PlaceData}>(this.url)
+    .pipe(
+      map(resData => {
+        const places: Place[] = [];
+        for (const key in resData) {
+          if (resData.hasOwnProperty(key)) {
+            places.push(new Place(
+              key,
+              resData[key].title,
+              resData[key].description,
+              resData[key].imageUrl,
+              resData[key].price,
+              new Date(resData[key].availableFrom),
+              new Date(resData[key].availableTo),
+              resData[key].userId,
+            ));
+          }
+        }
+        return places;
+      }),
+      tap(places => {
+        this._places.next(places);
+      })
+    )
+  }
 
   get places() {
     return this._places.asObservable();
   }
 
   getPlace(id: string) {
+    return this.httpClient.get<PlaceData>(`${this.backendurl}offered-places/${id}.json`)
+    .pipe(
+      map(placeData => {
+        return new Place(
+          id,
+          placeData.title,
+          placeData.description,
+          placeData.imageUrl,
+          placeData.price,
+          new Date(placeData.availableFrom),
+          new Date(placeData.availableTo),
+          placeData.userId
+        );
+      })
+    );
     return this.places.pipe(
       take(1),
       map(places => {
@@ -67,22 +116,35 @@ export class PlacesService {
       dateTo,
       this.authService.userId
     );
-    return this.places.pipe(
-      take(1),
-      delay(1000),
-      tap(places => {
-        this._places.next(places.concat(newPlace));
-      })
-    );
+    let generatedId: string;
+    return this.httpClient
+      .post<{ name: string }>(this.url, {...newPlace, id: null})
+      .pipe(
+        switchMap(resData => {
+          generatedId = resData.name;
+          return this.places;
+        }),
+        take(1),
+        tap(places => {
+          newPlace.id = generatedId;
+          this._places.next(places.concat(newPlace));
+      }));
   }
 
   updatePlace(placeId: string, title: string, description: string) {
+    let updatedPlaces: Place[];
     return this._places.pipe(
       take(1),
-      delay(1000),
-      tap(places => {
+      switchMap(places => {
+        if (!places || places.length <= 0) {
+          return this.fetchPlaces();
+        } else {
+          return of(places);
+        }
+      }),
+      switchMap(places => {
         const placeIndex = places.findIndex(place => place.id === placeId);
-        const updatedPlaces = [...places];
+        updatedPlaces = [...places];
         const oldPlace = updatedPlaces[placeIndex];
         updatedPlaces[placeIndex] = new Place(
           placeId,
@@ -94,6 +156,11 @@ export class PlacesService {
           oldPlace.availableTo,
           oldPlace.userId
         );
+        return this.httpClient.put(
+          `${this.backendurl}offered-places/${placeId}.json`,
+          { ...updatedPlaces[placeIndex], id: null });
+      }),
+      tap(() => {
         this._places.next(updatedPlaces);
       })
     );
