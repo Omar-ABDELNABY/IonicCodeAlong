@@ -10,7 +10,6 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class PlacesService {
-
   private oldPlaces = [
     new Place(
       'p1',
@@ -20,7 +19,7 @@ export class PlacesService {
       149.99,
       new Date('2019-01-01'),
       new Date('2019-12-31'),
-      'xyz',
+      'xyz'
     ),
     new Place(
       'p2',
@@ -30,7 +29,7 @@ export class PlacesService {
       189.99,
       new Date('2019-01-01'),
       new Date('2019-12-31'),
-      'abc',
+      'abc'
     ),
     new Place(
       'p3',
@@ -40,35 +39,38 @@ export class PlacesService {
       99.99,
       new Date('2019-01-01'),
       new Date('2019-12-31'),
-      'abc',
-    ),
+      'abc'
+    )
   ];
 
   private backendurl = environment.backendurl;
   private urlPart = 'offered-places.json';
-  private url = `${this.backendurl}${this.urlPart}`
+  private url = `${this.backendurl}${this.urlPart}`;
   private _places = new BehaviorSubject<Place[]>([]);
 
-  constructor(private authService: AuthService, private httpClient: HttpClient) { }
+  constructor(
+    private authService: AuthService,
+    private httpClient: HttpClient
+  ) {}
 
   fetchPlaces() {
-    return this.httpClient
-    .get<{[key: string]: PlaceData}>(this.url)
-    .pipe(
+    return this.httpClient.get<{ [key: string]: PlaceData }>(this.url).pipe(
       map(resData => {
         const places: Place[] = [];
         for (const key in resData) {
           if (resData.hasOwnProperty(key)) {
-            places.push(new Place(
-              key,
-              resData[key].title,
-              resData[key].description,
-              resData[key].imageUrl,
-              resData[key].price,
-              new Date(resData[key].availableFrom),
-              new Date(resData[key].availableTo),
-              resData[key].userId,
-            ));
+            places.push(
+              new Place(
+                key,
+                resData[key].title,
+                resData[key].description,
+                resData[key].imageUrl,
+                resData[key].price,
+                new Date(resData[key].availableFrom),
+                new Date(resData[key].availableTo),
+                resData[key].userId
+              )
+            );
           }
         }
         return places;
@@ -76,7 +78,7 @@ export class PlacesService {
       tap(places => {
         this._places.next(places);
       })
-    )
+    );
   }
 
   get places() {
@@ -84,32 +86,35 @@ export class PlacesService {
   }
 
   getPlace(id: string) {
-    return this.httpClient.get<PlaceData>(`${this.backendurl}offered-places/${id}.json`)
-    .pipe(
-      map(placeData => {
-        return new Place(
-          id,
-          placeData.title,
-          placeData.description,
-          placeData.imageUrl,
-          placeData.price,
-          new Date(placeData.availableFrom),
-          new Date(placeData.availableTo),
-          placeData.userId
-        );
-      })
-    );
-    return this.places.pipe(
-      take(1),
-      map(places => {
-        return {...places.find(p => p.id === id )};
-      }));
+    return this.httpClient
+      .get<PlaceData>(`${this.backendurl}offered-places/${id}.json`)
+      .pipe(
+        map(placeData => {
+          return new Place(
+            id,
+            placeData.title,
+            placeData.description,
+            placeData.imageUrl,
+            placeData.price,
+            new Date(placeData.availableFrom),
+            new Date(placeData.availableTo),
+            placeData.userId
+          );
+        })
+      );
   }
 
-  addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date) {
+  addPlace(
+    title: string,
+    description: string,
+    price: number,
+    dateFrom: Date,
+    dateTo: Date
+  ) {
     const newPlace = new Place(
       Math.random.toString(),
-      title, description,
+      title,
+      description,
       'http://rye0808.cafe24.com/wp-content/uploads/2015/02/Gyeongbokgung-KeunJeongJeon-e1527567061810-980x490.jpg',
       price,
       dateFrom,
@@ -118,7 +123,7 @@ export class PlacesService {
     );
     let generatedId: string;
     return this.httpClient
-      .post<{ name: string }>(this.url, {...newPlace, id: null})
+      .post<{ name: string }>(this.url, { ...newPlace, id: null })
       .pipe(
         switchMap(resData => {
           generatedId = resData.name;
@@ -128,7 +133,8 @@ export class PlacesService {
         tap(places => {
           newPlace.id = generatedId;
           this._places.next(places.concat(newPlace));
-      }));
+        })
+      );
   }
 
   updatePlace(placeId: string, title: string, description: string) {
@@ -158,7 +164,8 @@ export class PlacesService {
         );
         return this.httpClient.put(
           `${this.backendurl}offered-places/${placeId}.json`,
-          { ...updatedPlaces[placeIndex], id: null });
+          { ...updatedPlaces[placeIndex], id: null }
+        );
       }),
       tap(() => {
         this._places.next(updatedPlaces);
