@@ -1,3 +1,5 @@
+import { PlaceLocation } from './location.model';
+
 export class Place {
     constructor(
         public id: string,
@@ -8,17 +10,19 @@ export class Place {
         public availableFrom: Date,
         public availableTo: Date,
         public userId: string,
+        public location: PlaceLocation
         ) { }
 }
 
 export interface PlaceData {
-    availableFrom: string
-    availableTo: string
-    description: string
-    imageUrl: string
-    price: number
-    title: string
-    userId: string
+    availableFrom: string;
+    availableTo: string;
+    description: string;
+    imageUrl: string;
+    price: number;
+    title: string;
+    userId: string;
+    location: PlaceLocation;
   }
 
 

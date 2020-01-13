@@ -5,42 +5,43 @@ import { BehaviorSubject, of } from 'rxjs';
 import { take, map, tap, delay, filter, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { PlaceLocation } from './location.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlacesService {
   private oldPlaces = [
-    new Place(
-      'p1',
-      'Manhattan Mansion',
-      'In the heart of Newyork City',
-      'https://imgs.6sqft.com/wp-content/uploads/2014/06/21042533/Carnegie-Mansion-nyc.jpg',
-      149.99,
-      new Date('2019-01-01'),
-      new Date('2019-12-31'),
-      'xyz'
-    ),
-    new Place(
-      'p2',
-      `L'Amour Toujours`,
-      'A romantic place in Paris',
-      'https://miro.medium.com/max/4096/1*t-nXIcaD3oP6CS4ydXV1xw.jpeg',
-      189.99,
-      new Date('2019-01-01'),
-      new Date('2019-12-31'),
-      'abc'
-    ),
-    new Place(
-      'p3',
-      'The Foggy Palace',
-      'Not your average city trip',
-      'https://i.pinimg.com/originals/9c/88/44/9c8844b217bdb6c17db14f51ad2e51a5.jpg',
-      99.99,
-      new Date('2019-01-01'),
-      new Date('2019-12-31'),
-      'abc'
-    )
+    // new Place(
+    //   'p1',
+    //   'Manhattan Mansion',
+    //   'In the heart of Newyork City',
+    //   'https://imgs.6sqft.com/wp-content/uploads/2014/06/21042533/Carnegie-Mansion-nyc.jpg',
+    //   149.99,
+    //   new Date('2019-01-01'),
+    //   new Date('2019-12-31'),
+    //   'xyz'
+    // ),
+    // new Place(
+    //   'p2',
+    //   `L'Amour Toujours`,
+    //   'A romantic place in Paris',
+    //   'https://miro.medium.com/max/4096/1*t-nXIcaD3oP6CS4ydXV1xw.jpeg',
+    //   189.99,
+    //   new Date('2019-01-01'),
+    //   new Date('2019-12-31'),
+    //   'abc'
+    // ),
+    // new Place(
+    //   'p3',
+    //   'The Foggy Palace',
+    //   'Not your average city trip',
+    //   'https://i.pinimg.com/originals/9c/88/44/9c8844b217bdb6c17db14f51ad2e51a5.jpg',
+    //   99.99,
+    //   new Date('2019-01-01'),
+    //   new Date('2019-12-31'),
+    //   'abc'
+    // )
   ];
 
   private backendurl = environment.backendurl;
@@ -68,7 +69,8 @@ export class PlacesService {
                 resData[key].price,
                 new Date(resData[key].availableFrom),
                 new Date(resData[key].availableTo),
-                resData[key].userId
+                resData[key].userId,
+                resData[key].location
               )
             );
           }
@@ -98,7 +100,8 @@ export class PlacesService {
             placeData.price,
             new Date(placeData.availableFrom),
             new Date(placeData.availableTo),
-            placeData.userId
+            placeData.userId,
+            placeData.location
           );
         })
       );
@@ -109,7 +112,8 @@ export class PlacesService {
     description: string,
     price: number,
     dateFrom: Date,
-    dateTo: Date
+    dateTo: Date,
+    location: PlaceLocation
   ) {
     const newPlace = new Place(
       Math.random.toString(),
@@ -119,7 +123,8 @@ export class PlacesService {
       price,
       dateFrom,
       dateTo,
-      this.authService.userId
+      this.authService.userId,
+      location
     );
     let generatedId: string;
     return this.httpClient
@@ -160,7 +165,8 @@ export class PlacesService {
           oldPlace.price,
           oldPlace.availableFrom,
           oldPlace.availableTo,
-          oldPlace.userId
+          oldPlace.userId,
+          oldPlace.location
         );
         return this.httpClient.put(
           `${this.backendurl}offered-places/${placeId}.json`,

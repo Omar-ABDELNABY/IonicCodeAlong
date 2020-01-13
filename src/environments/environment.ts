@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  backendurl: 'https://ionic-angular-course-omar.firebaseio.com/'
+  backendurl: 'https://ionic-angular-course-omar.firebaseio.com/',
+  googleMapsApiKey: ''
 };
 
 /*
