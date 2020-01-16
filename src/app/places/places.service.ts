@@ -45,6 +45,8 @@ export class PlacesService {
   ];
 
   private backendurl = environment.backendurl;
+  private firebaseStoreImage = environment.firebaseStoreImage;
+
   private urlPart = 'offered-places.json';
   private url = `${this.backendurl}${this.urlPart}`;
   private _places = new BehaviorSubject<Place[]>([]);
@@ -107,19 +109,29 @@ export class PlacesService {
       );
   }
 
+  uploadImage(image: File) {
+    const uploadData = new FormData();
+    uploadData.append('image', image);
+    return this.httpClient.post<{ imageUrl: string, imagePath: string }>(
+      this.firebaseStoreImage,
+      uploadData
+    );
+  }
+
   addPlace(
     title: string,
     description: string,
     price: number,
     dateFrom: Date,
     dateTo: Date,
-    location: PlaceLocation
+    location: PlaceLocation,
+    imageUrl: string,
   ) {
     const newPlace = new Place(
       Math.random.toString(),
       title,
       description,
-      'http://rye0808.cafe24.com/wp-content/uploads/2015/02/Gyeongbokgung-KeunJeongJeon-e1527567061810-980x490.jpg',
+      imageUrl,
       price,
       dateFrom,
       dateTo,

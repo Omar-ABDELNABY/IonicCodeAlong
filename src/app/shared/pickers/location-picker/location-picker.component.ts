@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { ModalController, ActionSheetController, AlertController } from '@ionic/angular';
 import { MapModalComponent } from '../../map-modal/map-modal.component';
 import { HttpClient } from '@angular/common/http';
@@ -18,6 +18,7 @@ export class LocationPickerComponent implements OnInit {
   private apiKey = environment.googleMapsApiKey;
 
   @Output() locationPick = new EventEmitter<PlaceLocation>();
+  @Input() showPreview = false;
   selectedLocationImage: string;
   isLoading = false;
 
@@ -57,7 +58,7 @@ export class LocationPickerComponent implements OnInit {
 
   private locateUser() {
     this.isLoading = true;
-    if (!Capacitor.isPluginAvailable('GeoLocation')) {
+    if (!Capacitor.isPluginAvailable('Geolocation')) {
       this.isLoading = false;
       this.showErrorAlert();
       return;

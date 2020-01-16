@@ -19,6 +19,10 @@ export class AuthService {
 
   constructor() { }
 
+  signup(email: string, passwqoprd: string) {
+    
+  }
+
   login() {
     this._userIsAuthenticated = true;
   }
