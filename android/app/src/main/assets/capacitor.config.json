@@ -1,6 +1,6 @@
 {
-  "appId": "io.ionic.starter",
-  "appName": "firstIonicAngular",
+  "appId": "com.omarabdelnaby.PairBnb",
+  "appName": "PairBnb",
   "bundledWebRuntime": false,
   "npmClient": "npm",
   "webDir": "www",

@@ -8,6 +8,7 @@ import { Subscription } from 'rxjs';
 import { BookingService } from 'src/app/bookings/booking.service';
 import { AuthService } from 'src/app/auth/auth.service';
 import { MapModalComponent } from 'src/app/shared/map-modal/map-modal.component';
+import { take, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-place-detail',
@@ -41,9 +42,20 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
         return;
       }
       this.isLoading = true;
-      this.placesSubscription = this.placeService.getPlace(paramMap.get('placeId')).subscribe(place => {
+      let fetchedUserId: string;
+      this.placesSubscription = this.authService.userId.pipe(
+        take(1),
+        switchMap(userId => {
+          if (!userId) {
+            throw new Error('User Not Fownd')
+          }
+          fetchedUserId = userId;
+          return this.placeService.getPlace(paramMap.get('placeId'));
+        })
+      )
+      .subscribe(place => {
         this.place = place;
-        this.isBookable = this.place.userId !== this.authService.userId;
+        this.isBookable = this.place.userId !== fetchedUserId;
         this.isLoading = false;
       }, error => {
         this.alertController.create({

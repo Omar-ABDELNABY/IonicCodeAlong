@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">firstIonicAngular</string>
-    <string name="title_activity_main">firstIonicAngular</string>
-    <string name="package_name">io.ionic.starter</string>
-    <string name="custom_url_scheme">io.ionic.starter</string>
+    <string name="app_name">PairBnb</string>
+    <string name="title_activity_main">PairBnb</string>
+    <string name="package_name">com.omarabdelnaby.PairBnb</string>
+    <string name="custom_url_scheme">com.omarabdelnaby.PairBnb</string>
 </resources>

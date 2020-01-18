@@ -57,7 +57,11 @@ export class PlacesService {
   ) {}
 
   fetchPlaces() {
-    return this.httpClient.get<{ [key: string]: PlaceData }>(this.url).pipe(
+    return this.authService.token.pipe(
+      take(1),
+      switchMap(token => {
+        return this.httpClient.get<{ [key: string]: PlaceData }>(`${this.url}?auth=${token}`);
+      }),
       map(resData => {
         const places: Place[] = [];
         for (const key in resData) {
@@ -90,31 +94,40 @@ export class PlacesService {
   }
 
   getPlace(id: string) {
-    return this.httpClient
-      .get<PlaceData>(`${this.backendurl}offered-places/${id}.json`)
-      .pipe(
-        map(placeData => {
-          return new Place(
-            id,
-            placeData.title,
-            placeData.description,
-            placeData.imageUrl,
-            placeData.price,
-            new Date(placeData.availableFrom),
-            new Date(placeData.availableTo),
-            placeData.userId,
-            placeData.location
-          );
-        })
-      );
+    return this.authService.token.pipe(
+      take(1),
+      switchMap(token => {
+        return this.httpClient
+        .get<PlaceData>(`${this.backendurl}offered-places/${id}.json?auth=${token}`)
+      }),
+      map(placeData => {
+        return new Place(
+          id,
+          placeData.title,
+          placeData.description,
+          placeData.imageUrl,
+          placeData.price,
+          new Date(placeData.availableFrom),
+          new Date(placeData.availableTo),
+          placeData.userId,
+          placeData.location
+        );
+      })
+    );
   }
 
   uploadImage(image: File) {
     const uploadData = new FormData();
     uploadData.append('image', image);
-    return this.httpClient.post<{ imageUrl: string, imagePath: string }>(
-      this.firebaseStoreImage,
-      uploadData
+    return this.authService.token.pipe(
+      take(1),
+      switchMap(token => {
+        return this.httpClient.post<{ imageUrl: string, imagePath: string }>(
+          this.firebaseStoreImage,
+          uploadData,
+          { headers: {Authorization: 'Bearer '+ token} }
+        );
+      })
     );
   }
 
@@ -127,36 +140,54 @@ export class PlacesService {
     location: PlaceLocation,
     imageUrl: string,
   ) {
-    const newPlace = new Place(
-      Math.random.toString(),
-      title,
-      description,
-      imageUrl,
-      price,
-      dateFrom,
-      dateTo,
-      this.authService.userId,
-      location
-    );
     let generatedId: string;
-    return this.httpClient
-      .post<{ name: string }>(this.url, { ...newPlace, id: null })
-      .pipe(
-        switchMap(resData => {
-          generatedId = resData.name;
-          return this.places;
-        }),
-        take(1),
-        tap(places => {
-          newPlace.id = generatedId;
-          this._places.next(places.concat(newPlace));
-        })
-      );
+    let newPlace: Place;
+    let fetchedUserId: string;
+    return this.authService.userId.pipe(
+      take(1),
+      switchMap(userId => {
+        if (!userId) {
+          throw new Error('User Not Fownd')
+        }
+        fetchedUserId = userId;
+        return this.authService.token
+      }),
+      take(1),
+      switchMap(token => {
+        newPlace = new Place(
+          Math.random.toString(),
+          title,
+          description,
+          imageUrl,
+          price,
+          dateFrom,
+          dateTo,
+          fetchedUserId,
+          location
+        );
+        return this.httpClient.post<{ name: string }>(`${this.url}?auth=${token}`, { ...newPlace, id: null });
+      }),
+      switchMap(resData => {
+        generatedId = resData.name;
+        return this.places;
+      }),
+      take(1),
+      tap(places => {
+        newPlace.id = generatedId;
+        this._places.next(places.concat(newPlace));
+      })
+    );  
   }
 
   updatePlace(placeId: string, title: string, description: string) {
     let updatedPlaces: Place[];
-    return this._places.pipe(
+    let fetchedToken: string;
+    return this.authService.token.pipe(
+      take(1),
+      switchMap(token => {
+        fetchedToken = token;
+        return this._places;
+      }),
       take(1),
       switchMap(places => {
         if (!places || places.length <= 0) {
@@ -181,7 +212,7 @@ export class PlacesService {
           oldPlace.location
         );
         return this.httpClient.put(
-          `${this.backendurl}offered-places/${placeId}.json`,
+          `${this.backendurl}offered-places/${placeId}.json?auth=${fetchedToken}`,
           { ...updatedPlaces[placeIndex], id: null }
         );
       }),

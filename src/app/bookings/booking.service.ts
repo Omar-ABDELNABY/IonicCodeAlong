@@ -21,34 +21,45 @@ export class BookingService {
     }
 
     fetchBookings() {
-        return this.httpClient.get<{[key: string]: BookingData}>(
-            `${this.backendurl}bookings.json?orderBy="userId"&equalTo="${this.authService.userId}"`
-            )
-            .pipe(
-                map(bookingData => {
-                    const bookings = [];
-                    for (const key in bookingData) {
-                        if (bookingData.hasOwnProperty(key)) {
-                            bookings.push(new Booking(
-                                key,
-                                bookingData[key].placeId,
-                                bookingData[key].userId,
-                                bookingData[key].placeTitle,
-                                bookingData[key].placeImage,
-                                bookingData[key].firstName,
-                                bookingData[key].lastName,
-                                bookingData[key].guestNumber,
-                                new Date(bookingData[key].bookedFrom),
-                                new Date(bookingData[key].bookedTo)
-                            ));
-                        }
+        let fetchedUserId: string;
+        return this.authService.userId.pipe(
+            take(1),
+            switchMap(userId => {
+                if (!userId) {
+                    throw new Error('User Not Fownd')
+                }
+                fetchedUserId = userId;
+                return this.authService.token;
+            }),
+            take(1),
+            switchMap(token => {
+                return this.httpClient.get<{[key: string]: BookingData}>(
+                    `${this.backendurl}bookings.json?orderBy="userId"&equalTo="${fetchedUserId}"&auth=${token}`
+                    )
+            }),
+            map(bookingData => {
+                const bookings = [];
+                for (const key in bookingData) {
+                    if (bookingData.hasOwnProperty(key)) {
+                        bookings.push(new Booking(
+                            key,
+                            bookingData[key].placeId,
+                            bookingData[key].userId,
+                            bookingData[key].placeTitle,
+                            bookingData[key].placeImage,
+                            bookingData[key].firstName,
+                            bookingData[key].lastName,
+                            bookingData[key].guestNumber,
+                            new Date(bookingData[key].bookedFrom),
+                            new Date(bookingData[key].bookedTo)
+                        ));
                     }
-                    return bookings;
-                }), tap(bookings => {
-                    this._bookings.next(bookings);
-                })
-            );
-
+                }
+                return bookings;
+            }), tap(bookings => {
+                this._bookings.next(bookings);
+            })
+        );       
     }
 
     addBooking(
@@ -61,44 +72,60 @@ export class BookingService {
         dateFrom: Date,
         dateTo: Date
     ) {
-        const newBooking = new Booking(
-            Math.random().toString(),
-            placeId,
-            this.authService.userId,
-            placeTitle,
-            placeImage,
-            firstName,
-            lastName,
-            guestNumber,
-            dateFrom,
-            dateTo
-        );
+        let newBooking: Booking;
         let generatedId: string;
-        return this.httpClient.post<{ name: string }>(`${this.backendurl}bookings.json`, { ...newBooking, id: null })
-        .pipe(
+        let fetchedUserId: string;
+        return this.authService.userId.pipe(
+            take(1),
+            switchMap(userId => {
+                if (!userId) {
+                    throw new Error('No User id found');
+                }
+                fetchedUserId = userId;
+                return this.authService.token;
+            }),
+            take(1),
+            switchMap(token => {
+                newBooking = new Booking(
+                    Math.random().toString(),
+                    placeId,
+                    fetchedUserId,
+                    placeTitle,
+                    placeImage,
+                    firstName,
+                    lastName,
+                    guestNumber,
+                    dateFrom,
+                    dateTo
+                );
+                return this.httpClient.post<{ name: string }>(`${this.backendurl}bookings.json?auth=${token}`, { ...newBooking, id: null });
+            }),
             switchMap(resData => {
-              generatedId = resData.name;
-              return this.bookings;
+                generatedId = resData.name;
+                return this.bookings;
             }),
             take(1),
             tap(bookings => {
                 newBooking.id = generatedId;
                 this._bookings.next(bookings.concat(newBooking));
-          }));
-
+            })
+        );
     }
 
     cancelBooking(bookingId: string) {
-        return this.httpClient.delete(`${this.backendurl}bookings/${bookingId}.json`)
-            .pipe(
-                switchMap(() => {
-                    return this.bookings;
-                }),
-                take(1),
-                tap (bookings => {
-                    this._bookings.next(bookings.filter(booking => booking.id !== bookingId));
-                })
-            );
+        return this.authService.token.pipe(
+            take(1),
+            switchMap(token => {
+                return this.httpClient.delete(`${this.backendurl}bookings/${bookingId}.json?auth=${token}`);
+            }),
+            switchMap(() => {
+                return this.bookings;
+            }),
+            take(1),
+            tap (bookings => {
+                this._bookings.next(bookings.filter(booking => booking.id !== bookingId));
+            })
+        );
     }
 }
 
